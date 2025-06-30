@@ -6,16 +6,16 @@ import styles from '../styles/Message.module.css';
 
 // Color palette for users
 const userColors = [
+    '#607d8b', // blue grey
+    '#00bcd4', // cyan
     '#4f8cff', // blue
     '#2ecc40', // green
     '#ffb300', // orange
     '#e040fb', // purple
     '#ff4081', // pink
-    '#00bcd4', // cyan
     '#ff5252', // red
     '#8bc34a', // light green
     '#ff9800', // deep orange
-    '#607d8b', // blue grey
 ];
 
 function getUserColor(uid) {
@@ -29,7 +29,7 @@ function getUserColor(uid) {
 
 const Message = ({ message, currentUid, roomId }) => {
     const [isVisible, setIsVisible] = useState(true);
-    const [timeLeft, setTimeLeft] = useState(10);
+    const [timeLeft, setTimeLeft] = useState(20);
     const isOwnMessage = message.uid === currentUid;
 
     useEffect(() => {
@@ -45,8 +45,8 @@ const Message = ({ message, currentUid, roomId }) => {
         // Start timer from when this user saw the message
         const seenAt = message.seenAt && message.seenAt[currentUid] ? new Date(message.seenAt[currentUid].seconds ? message.seenAt[currentUid].seconds * 1000 : message.seenAt[currentUid]) : now;
         const elapsed = Math.floor((now - seenAt) / 1000);
-        setTimeLeft(Math.max(10 - elapsed, 0));
-        if (elapsed < 10) {
+        setTimeLeft(Math.max(20 - elapsed, 0));
+        if (elapsed < 20) {
             timer = setInterval(() => {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
@@ -60,7 +60,7 @@ const Message = ({ message, currentUid, roomId }) => {
                                 const userElapsed = userSeenAt.seconds
                                     ? Math.floor((now - new Date(userSeenAt.seconds * 1000)) / 1000)
                                     : Math.floor((now - new Date(userSeenAt)) / 1000);
-                                return userElapsed >= 10;
+                                return userElapsed >= 20;
                             });
                             if (allExpired) {
                                 deleteDoc(doc(db, 'rooms', roomId, 'messages', message.id));
@@ -83,9 +83,12 @@ const Message = ({ message, currentUid, roomId }) => {
         <div className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
             <div
                 className={styles.messageContent}
-                style={{ backgroundColor: getUserColor(message.uid) }}
+                style={{ backgroundColor: getUserColor(message.displayName || message.uid) }}
             >
-                <p>{message.text}</p>
+                <p style={{ fontWeight: 'bold', margin: 0, color: getUserColor(message.displayName || message.uid), fontSize: 13 }}>
+                    {message.displayName || 'Unknown'}
+                </p>
+                <p style={{ margin: 0 }}>{message.text}</p>
                 <div className={styles.timer}>{timeLeft}s</div>
             </div>
         </div>

@@ -80,6 +80,7 @@ const Chat = ({ roomId, displayName }) => {
                 text: newMessage,
                 createdAt: serverTimestamp(),
                 uid: auth.currentUser.uid,
+                displayName,
                 seenBy: [auth.currentUser.uid],
                 seenAt: { [auth.currentUser.uid]: now }
             });
