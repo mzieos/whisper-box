@@ -1,0 +1,42 @@
+.message {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.ownMessage {
+    justify-content: flex-end;
+}
+
+.otherMessage {
+    justify-content: flex-start;
+}
+
+.messageContent {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 18px;
+    position: relative;
+}
+
+.ownMessage .messageContent {
+    background-color: #ff4081;
+    color: white;
+}
+
+.otherMessage .messageContent {
+    background-color: #2d2d2d;
+    color: white;
+}
+
+.timer {
+    position: absolute;
+    bottom: -20px;
+    right: 5px;
+    font-size: 10px;
+    color: #b0b0b0;
+}
+
+.ownMessage .timer {
+    left: 5px;
+    right: auto;
+}
