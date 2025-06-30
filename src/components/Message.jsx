@@ -4,7 +4,30 @@ import { db } from '../firebase/config';
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import styles from '../styles/Message.module.css';
 
-const Message = ({ message, isCreator, currentUid }) => {
+// Color palette for users
+const userColors = [
+    '#4f8cff', // blue
+    '#2ecc40', // green
+    '#ffb300', // orange
+    '#e040fb', // purple
+    '#ff4081', // pink
+    '#00bcd4', // cyan
+    '#ff5252', // red
+    '#8bc34a', // light green
+    '#ff9800', // deep orange
+    '#607d8b', // blue grey
+];
+
+function getUserColor(uid) {
+    let hash = 0;
+    for (let i = 0; i < uid.length; i++) {
+        hash = uid.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % userColors.length;
+    return userColors[index];
+}
+
+const Message = ({ message, currentUid, roomId }) => {
     const [isVisible, setIsVisible] = useState(true);
     const [timeLeft, setTimeLeft] = useState(10);
     const isOwnMessage = message.uid === currentUid;
@@ -14,7 +37,7 @@ const Message = ({ message, isCreator, currentUid }) => {
         const now = new Date();
         // If current user hasn't seen the message, mark as seen
         if (!message.seenBy || !message.seenBy.includes(currentUid)) {
-            updateDoc(doc(db, 'messages', message.id), {
+            updateDoc(doc(db, 'rooms', roomId, 'messages', message.id), {
                 [`seenBy`]: [...(message.seenBy || []), currentUid],
                 [`seenAt.${currentUid}`]: now
             });
@@ -29,13 +52,18 @@ const Message = ({ message, isCreator, currentUid }) => {
                     if (prev <= 1) {
                         clearInterval(timer);
                         setIsVisible(false);
-                        // Only delete if both users have seen and their timers expired
+                        // Only delete if at least 2 users have seen and both timers expired
                         if (message.seenBy && message.seenBy.length >= 2) {
-                            const otherUid = message.seenBy.find(uid => uid !== currentUid);
-                            const otherSeenAt = message.seenAt && message.seenAt[otherUid];
-                            const otherElapsed = otherSeenAt ? Math.floor((now - (otherSeenAt.seconds ? new Date(otherSeenAt.seconds * 1000) : new Date(otherSeenAt))) / 1000) : 0;
-                            if (otherElapsed >= 10) {
-                                deleteDoc(doc(db, 'messages', message.id));
+                            const allExpired = message.seenBy.every(uid => {
+                                const userSeenAt = message.seenAt && message.seenAt[uid];
+                                if (!userSeenAt) return false;
+                                const userElapsed = userSeenAt.seconds
+                                    ? Math.floor((now - new Date(userSeenAt.seconds * 1000)) / 1000)
+                                    : Math.floor((now - new Date(userSeenAt)) / 1000);
+                                return userElapsed >= 10;
+                            });
+                            if (allExpired) {
+                                deleteDoc(doc(db, 'rooms', roomId, 'messages', message.id));
                             }
                         }
                         return 0;
@@ -47,13 +75,16 @@ const Message = ({ message, isCreator, currentUid }) => {
             setIsVisible(false);
         }
         return () => clearInterval(timer);
-    }, [message.id, message.seenBy, message.seenAt, currentUid]);
+    }, [message.id, message.seenBy, message.seenAt, currentUid, roomId]);
 
     if (!isVisible) return null;
 
     return (
         <div className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
-            <div className={styles.messageContent}>
+            <div
+                className={styles.messageContent}
+                style={{ backgroundColor: getUserColor(message.uid) }}
+            >
                 <p>{message.text}</p>
                 <div className={styles.timer}>{timeLeft}s</div>
             </div>

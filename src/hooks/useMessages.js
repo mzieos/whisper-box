@@ -3,12 +3,16 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
 
-const useMessages = () => {
+const useMessages = (roomId) => {
     const [messages, setMessages] = useState([]);
 
     useEffect(() => {
+        if (!roomId) {
+            setMessages([]);
+            return;
+        }
         const q = query(
-            collection(db, 'messages'),
+            collection(db, 'rooms', roomId, 'messages'),
             orderBy('createdAt', 'desc'),
             limit(50)
         );
@@ -23,7 +27,7 @@ const useMessages = () => {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [roomId]);
 
     return messages;
 };

@@ -45,3 +45,25 @@
 .messageForm button:hover {
     background-color: #f50057;
 }
+
+@media (max-width: 600px) {
+    .chatContainer {
+        height: 100vh;
+        min-height: 100vh;
+    }
+    .messages {
+        padding: 8px;
+        gap: 8px;
+    }
+    .messageForm {
+        padding: 8px;
+    }
+    .messageForm input {
+        padding: 10px;
+        font-size: 15px;
+    }
+    .messageForm button {
+        padding: 0 14px;
+        font-size: 15px;
+    }
+}
