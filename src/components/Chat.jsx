@@ -1,7 +1,7 @@
 // src/components/Chat.jsx
 import { useState, useEffect, useRef } from 'react';
 import { db, auth } from '../firebase/config';
-import { collection, addDoc, onSnapshot, query, orderBy, limit, doc, setDoc, getDoc, updateDoc, deleteDoc, getDocs, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, limit, doc, setDoc, getDoc, updateDoc, deleteDoc, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
 import Message from './Message';
 import useMessages from '../hooks/useMessages';
 import styles from '../styles/Chat.module.css';
@@ -13,6 +13,8 @@ const Chat = ({ roomId, displayName }) => {
     const [closed, setClosed] = useState(false);
     const [holdLoading, setHoldLoading] = useState(false);
     const [closeLoading, setCloseLoading] = useState(false);
+    const [roomCreatedAt, setRoomCreatedAt] = useState(null);
+    const [roomExpiresIn, setRoomExpiresIn] = useState('');
     const messages = useMessages(roomId);
     const messagesEndRef = useRef(null);
     const audioRef = useRef(null);
@@ -30,10 +32,28 @@ const Chat = ({ roomId, displayName }) => {
                 setHold(data.hold || { active: false, by: '', displayName: '' });
                 setClosed(data.closed || false);
                 setRoomPassword(data.passwordHash || '');
+                setRoomCreatedAt(data.createdAt || null);
             }
         });
         return () => unsub();
     }, [roomId]);
+
+    useEffect(() => {
+        if (!roomCreatedAt) return;
+        const interval = setInterval(() => {
+            const now = new Date();
+            const expiresAt = new Date((roomCreatedAt.seconds || 0) * 1000 + 24 * 3600 * 1000);
+            const diff = expiresAt - now;
+            if (diff > 0) {
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                setRoomExpiresIn(`${hours}h ${minutes}m`);
+            } else {
+                setRoomExpiresIn('Expired');
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [roomCreatedAt]);
 
     const handleHold = async () => {
         setHoldLoading(true);
@@ -79,6 +99,7 @@ const Chat = ({ roomId, displayName }) => {
             await addDoc(collection(db, 'rooms', roomId, 'messages'), {
                 text: newMessage,
                 createdAt: serverTimestamp(),
+                expiryTime: Timestamp.fromDate(new Date(now.getTime() + 20000)), // 20s from now
                 uid: auth.currentUser.uid,
                 displayName,
                 seenBy: [auth.currentUser.uid],
@@ -111,7 +132,8 @@ const Chat = ({ roomId, displayName }) => {
         <div className={styles.chatContainer}>
             <div style={{textAlign: 'center', padding: '10px 0', background: '#181818', color: '#fff', fontWeight: 600, fontSize: 16}}>
                 Room ID: {roomId} <br />
-                Password: <span style={{fontFamily: 'monospace'}}>{roomPassword}</span>
+                Password: <span style={{fontFamily: 'monospace'}}>{roomPassword}</span><br />
+                Room expires in: {roomExpiresIn}
             </div>
             <div style={{display: 'flex', justifyContent: 'center', gap: 10, margin: '10px 0'}}>
                 {!hold.active && (

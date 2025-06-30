@@ -89,7 +89,9 @@ const Message = ({ message, currentUid, roomId }) => {
                     {message.displayName || 'Unknown'}
                 </p>
                 <p style={{ margin: 0 }}>{message.text}</p>
-                <div className={styles.timer}>{timeLeft}s</div>
+                <div className={styles.timer}>
+                    {timeLeft > 5 ? `${timeLeft}s` : `Deleting in ${timeLeft}s...`}
+                </div>
             </div>
         </div>
     );
