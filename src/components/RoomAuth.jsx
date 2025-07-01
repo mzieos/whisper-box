@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { db } from '../firebase/config';
 import { collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import styles from '../styles/RoomAuth.module.css';
+// import styles from '../styles/RoomAuth.module.css';
 
 function hashPassword(password) {
   // Simple hash for demo (replace with a real hash in production)
@@ -90,17 +90,29 @@ const RoomAuth = ({ setIsAuthenticated, setRoomId }) => {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <h1>Whisper Box</h1>
+    <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+      <div className="glass w-full max-w-md p-8 rounded-xl shadow-2xl border border-white/10">
+        <h1 className="text-3xl font-bold text-center text-white mb-8">Whisper Box</h1>
+
         {!mode && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <button onClick={() => setMode('create')}>Create Room</button>
-            <button onClick={() => setMode('join')}>Join Room</button>
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={() => setMode('create')}
+              className="glass-button hover:bg-white/10 text-white py-3 px-4 rounded-lg transition-all duration-300 font-medium border border-white/20 backdrop-blur-md"
+            >
+              Create Room
+            </button>
+            <button
+              onClick={() => setMode('join')}
+              className="glass-button hover:bg-white/10 text-white py-3 px-4 rounded-lg transition-all duration-300 font-medium border border-white/20 backdrop-blur-md"
+            >
+              Join Room
+            </button>
           </div>
         )}
+
         {mode === 'create' && (
-          <form onSubmit={handleCreate}>
+          <form onSubmit={handleCreate} className="space-y-4">
             <input
               type="text"
               value={displayName}
@@ -108,6 +120,7 @@ const RoomAuth = ({ setIsAuthenticated, setRoomId }) => {
               placeholder="Display name"
               required
               maxLength={20}
+              className="w-full px-4 py-3 bg-gray-800/50 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/20 backdrop-blur-sm"
             />
             <input
               type="password"
@@ -115,13 +128,29 @@ const RoomAuth = ({ setIsAuthenticated, setRoomId }) => {
               onChange={e => setPassword(e.target.value)}
               placeholder="Set a password"
               required
+              className="w-full px-4 py-3 bg-gray-800/50 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/20 backdrop-blur-sm"
             />
-            <button type="submit" disabled={loading}>{loading ? 'Creating...' : 'Create Room'}</button>
-            <button type="button" onClick={() => setMode('')}>Back</button>
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 glass-button hover:bg-white/10 text-white py-3 px-4 rounded-lg transition-all duration-300 font-medium border border-white/20 backdrop-blur-md disabled:opacity-50"
+              >
+                {loading ? 'Creating...' : 'Create Room'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('')}
+                className="flex-1 glass-button hover:bg-white/10 text-white py-3 px-4 rounded-lg transition-all duration-300 font-medium border border-white/20 backdrop-blur-md"
+              >
+                Back
+              </button>
+            </div>
           </form>
         )}
+
         {mode === 'join' && (
-          <form onSubmit={handleJoin}>
+          <form onSubmit={handleJoin} className="space-y-4">
             <input
               type="text"
               value={displayName}
@@ -129,6 +158,7 @@ const RoomAuth = ({ setIsAuthenticated, setRoomId }) => {
               placeholder="Display name"
               required
               maxLength={20}
+              className="w-full px-4 py-3 bg-gray-800/50 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/20 backdrop-blur-sm"
             />
             <input
               type="text"
@@ -139,6 +169,7 @@ const RoomAuth = ({ setIsAuthenticated, setRoomId }) => {
               maxLength={4}
               minLength={4}
               pattern="[0-9]{4}"
+              className="w-full px-4 py-3 bg-gray-800/50 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/20 backdrop-blur-sm"
             />
             <input
               type="password"
@@ -146,15 +177,35 @@ const RoomAuth = ({ setIsAuthenticated, setRoomId }) => {
               onChange={e => setPassword(e.target.value)}
               placeholder="Enter password"
               required
+              className="w-full px-4 py-3 bg-gray-800/50 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/20 backdrop-blur-sm"
             />
-            <button type="submit" disabled={loading}>{loading ? 'Joining...' : 'Join Room'}</button>
-            <button type="button" onClick={() => setMode('')}>Back</button>
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 glass-button hover:bg-white/10 text-white py-3 px-4 rounded-lg transition-all duration-300 font-medium border border-white/20 backdrop-blur-md disabled:opacity-50"
+              >
+                {loading ? 'Joining...' : 'Join Room'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('')}
+                className="flex-1 glass-button hover:bg-white/10 text-white py-3 px-4 rounded-lg transition-all duration-300 font-medium border border-white/20 backdrop-blur-md"
+              >
+                Back
+              </button>
+            </div>
           </form>
         )}
-        {error && <p className={styles.error}>{error}</p>}
+
+        {error && (
+          <p className="mt-4 p-3 bg-red-900/30 text-red-100 rounded-lg text-sm border border-red-900/50 backdrop-blur-sm">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );
 };
 
-export default RoomAuth; 
+export default RoomAuth;

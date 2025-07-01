@@ -31,6 +31,8 @@ const Message = ({ message, currentUid, roomId }) => {
     const [isVisible, setIsVisible] = useState(true);
     const [timeLeft, setTimeLeft] = useState(20);
     const isOwnMessage = message.uid === currentUid;
+    const userColor = getUserColor(message.uid);
+    const isLightColor = userColor === '#ffb300' || userColor === '#ff9800' || userColor === '#8bc34a'; // Adjust as needed
 
     useEffect(() => {
         let timer;
@@ -80,16 +82,29 @@ const Message = ({ message, currentUid, roomId }) => {
     if (!isVisible) return null;
 
     return (
-        <div className={`${styles.message} ${isOwnMessage ? styles.ownMessage : styles.otherMessage}`}>
+        <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-3 px-4`}>
             <div
-                className={styles.messageContent}
-                style={{ backgroundColor: getUserColor(message.displayName || message.uid) }}
+                className={`glass-message max-w-xs md:max-w-md rounded-2xl p-3 relative overflow-hidden 
+                    ${isOwnMessage ? 'rounded-tr-none' : 'rounded-tl-none'}`}
+                style={{
+                    backgroundColor: `${userColor}20`,
+                    border: `1px solid ${userColor}40`,
+                    backdropFilter: 'blur(10px)'
+                }}
             >
-                <p style={{ fontWeight: 'bold', margin: 0, color: getUserColor(message.displayName || message.uid), fontSize: 13 }}>
+                <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]"></div>
+                <p
+                    className={`font-semibold text-sm mb-1 ${isLightColor ? 'text-gray-900' : 'text-gray-100'}`}
+                    style={{ color: userColor }}
+                >
                     {message.displayName || 'Unknown'}
                 </p>
-                <p style={{ margin: 0 }}>{message.text}</p>
-                <div className={styles.timer}>
+                <p className={`text-sm ${isLightColor ? 'text-gray-800' : 'text-gray-100'}`}>
+                    {message.text}
+                </p>
+                <div
+                    className={`text-xs mt-1 text-right ${timeLeft <= 5 ? 'text-red-300' : 'text-gray-400'}`}
+                >
                     {timeLeft > 5 ? `${timeLeft}s` : `Deleting in ${timeLeft}s...`}
                 </div>
             </div>

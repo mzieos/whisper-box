@@ -1,10 +1,8 @@
-// src/components/Chat.jsx
 import { useState, useEffect, useRef } from 'react';
 import { db, auth } from '../firebase/config';
 import { collection, addDoc, onSnapshot, query, orderBy, limit, doc, setDoc, getDoc, updateDoc, deleteDoc, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
 import Message from './Message';
 import useMessages from '../hooks/useMessages';
-import styles from '../styles/Chat.module.css';
 
 const Chat = ({ roomId, displayName }) => {
     const [newMessage, setNewMessage] = useState('');
@@ -24,7 +22,6 @@ const Chat = ({ roomId, displayName }) => {
     }, [messages]);
 
     useEffect(() => {
-        // Listen for hold/close state
         if (!roomId) return;
         const unsub = onSnapshot(doc(db, 'rooms', roomId), (docSnap) => {
             if (docSnap.exists()) {
@@ -62,6 +59,7 @@ const Chat = ({ roomId, displayName }) => {
         });
         setHoldLoading(false);
     };
+
     const handleResume = async () => {
         setHoldLoading(true);
         await updateDoc(doc(db, 'rooms', roomId), {
@@ -69,20 +67,18 @@ const Chat = ({ roomId, displayName }) => {
         });
         setHoldLoading(false);
     };
+
     const handleCloseRoom = async () => {
         if (!window.confirm('Are you sure? This will end the chat for everyone.')) return;
         setCloseLoading(true);
-        // Delete all messages in the room
         const msgs = await getDocs(collection(db, 'rooms', roomId, 'messages'));
         for (const msg of msgs.docs) {
             await deleteDoc(msg.ref);
         }
-        // Mark room as closed (so users see notification before redirect)
         await updateDoc(doc(db, 'rooms', roomId), {
             closed: true,
             closedBy: displayName
         });
-        // Delete room after short delay
         setTimeout(async () => {
             await deleteDoc(doc(db, 'rooms', roomId));
         }, 2000);
@@ -99,7 +95,7 @@ const Chat = ({ roomId, displayName }) => {
             await addDoc(collection(db, 'rooms', roomId, 'messages'), {
                 text: newMessage,
                 createdAt: serverTimestamp(),
-                expiryTime: Timestamp.fromDate(new Date(now.getTime() + 20000)), // 20s from now
+                expiryTime: Timestamp.fromDate(new Date(now.getTime() + 20000)),
                 uid: auth.currentUser.uid,
                 displayName,
                 seenBy: [auth.currentUser.uid],
@@ -120,8 +116,8 @@ const Chat = ({ roomId, displayName }) => {
 
     if (closed) {
         return (
-            <div className={styles.chatContainer}>
-                <div style={{textAlign: 'center', padding: '20px', color: '#fff', background: '#181818', fontWeight: 600, fontSize: 18}}>
+            <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 to-gray-800">
+                <div className="glass-error text-center p-8 text-white text-lg font-semibold">
                     This room has been closed{typeof closed === 'string' ? ` by ${closed}` : ''}.
                 </div>
             </div>
@@ -129,49 +125,80 @@ const Chat = ({ roomId, displayName }) => {
     }
 
     return (
-        <div className={styles.chatContainer}>
-            <div style={{textAlign: 'center', padding: '10px 0', background: '#181818', color: '#fff', fontWeight: 600, fontSize: 16}}>
-                Room ID: {roomId} <br />
-                Password: <span style={{fontFamily: 'monospace'}}>{roomPassword}</span><br />
-                Room expires in: {roomExpiresIn}
+        <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 to-gray-800">
+            {/* Room Info Header */}
+            <div className="glass-header text-center py-3 text-white font-semibold text-sm md:text-base">
+                <div>Room ID: <span className="font-mono">{roomId}</span></div>
+                <div>Password: <span className="font-mono">{roomPassword}</span></div>
+                <div>Room expires in: {roomExpiresIn}</div>
             </div>
-            <div style={{display: 'flex', justifyContent: 'center', gap: 10, margin: '10px 0'}}>
+
+            {/* Control Buttons */}
+            <div className="flex justify-center gap-3 my-3 px-4">
                 {!hold.active && (
-                    <button onClick={handleHold} disabled={holdLoading} style={{background: '#ffb300', color: '#222', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 600, cursor: 'pointer'}}>
+                    <button
+                        onClick={handleHold}
+                        disabled={holdLoading}
+                        className="glass-button-hold px-4 py-2 rounded-lg font-semibold disabled:opacity-50"
+                    >
                         {holdLoading ? 'Pausing...' : 'Hold'}
                     </button>
                 )}
                 {hold.active && hold.by === auth.currentUser.uid && (
-                    <button onClick={handleResume} disabled={holdLoading} style={{background: '#2ecc40', color: '#222', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 600, cursor: 'pointer'}}>
+                    <button
+                        onClick={handleResume}
+                        disabled={holdLoading}
+                        className="glass-button-resume px-4 py-2 rounded-lg font-semibold disabled:opacity-50"
+                    >
                         {holdLoading ? 'Resuming...' : 'Resume'}
                     </button>
                 )}
-                <button onClick={handleCloseRoom} disabled={closeLoading} style={{background: '#ff5252', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 600, cursor: 'pointer'}}>
+                <button
+                    onClick={handleCloseRoom}
+                    disabled={closeLoading}
+                    className="glass-button-close px-4 py-2 rounded-lg font-semibold disabled:opacity-50"
+                >
                     {closeLoading ? 'Closing...' : 'Close Room'}
                 </button>
             </div>
+
+            {/* Hold Notice */}
             {hold.active && (
-                <div style={{textAlign: 'center', color: '#ffb300', fontWeight: 600, marginBottom: 8}}>
+                <div className="text-center text-amber-300 font-semibold text-sm mb-3 px-4">
                     Chat paused by {hold.displayName}. {hold.by === auth.currentUser.uid ? "Tap 'Resume' to continue." : 'Wait for them to resume.'}
                 </div>
             )}
-            <audio ref={audioRef} src="/assets/notification.mp3" preload="auto" />
-            <div className={styles.messages}>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3">
                 {messages.map((message) => (
                     <Message key={message.id} message={message} currentUid={auth.currentUser.uid} roomId={roomId} />
                 ))}
                 <div ref={messagesEndRef} />
             </div>
-            <form onSubmit={handleSubmit} className={styles.messageForm}>
-                <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder={hold.active && hold.by !== auth.currentUser.uid ? 'Chat is on hold...' : 'Type a message...'}
-                    disabled={hold.active && hold.by !== auth.currentUser.uid || closed}
-                />
-                <button type="submit" disabled={hold.active && hold.by !== auth.currentUser.uid || closed}>Send</button>
+
+            {/* Message Input */}
+            <form onSubmit={handleSubmit} className="glass-input-area p-4">
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder={hold.active && hold.by !== auth.currentUser.uid ? 'Chat is on hold...' : 'Type a message...'}
+                        disabled={hold.active && hold.by !== auth.currentUser.uid || closed}
+                        className="flex-1 glass-input px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <button
+                        type="submit"
+                        disabled={hold.active && hold.by !== auth.currentUser.uid || closed}
+                        className="glass-button-send px-4 py-3 rounded-lg font-semibold disabled:opacity-50"
+                    >
+                        Send
+                    </button>
+                </div>
             </form>
+
+            <audio ref={audioRef} src="/assets/notification.mp3" preload="auto" />
         </div>
     );
 };
